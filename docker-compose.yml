@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
+    container_name: elasticsearch
+    restart: always
+    environment:
+      - cluster.name=elasticsearch   #集群名称为elasticsearch
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g" #jvm内存分配
+      - "discovery.type=single-node" #单节点启动
+      - "TZ=Asia/Shanghai"
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=password
+    volumes:
+      - ./data/elasticsearch/data:/usr/share/elasticsearch/data
+      - ./data/elasticsearch/logs:/usr/share/elasticsearch/logs
+      - ./config/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /etc/localtime:/etc/localtime
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - elastic
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.11.2
+    container_name: kibana
+    restart: always
+ #   links:
+ #     - elasticsearch:es  #配置elasticsearch域名为es
+    depends_on:
+      - elasticsearch
+    volumes:
+       - ./config/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+       - ./data/kibana/data:/usr/share/kibana/data
+       - /etc/localtime:/etc/localtime
+    ports:
+      - 5601:5601
+    networks:
+      - elastic
+
+#  logstash:
+#    image: logstash:7.6.1
+#    container_name: logstash
+#    restart: always
+#    volumes:
+#      - /var/docker/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+#      - /etc/localtime:/etc/localtime
+#    depends_on:
+#      - elasticsearch
+#    links:
+#      - elasticsearch:es #配置elasticsearch域名为es
+#    ports:
+#      - 4560:4560
+#    networks:
+#      - elastic
+networks:
+  elastic:
+    driver: bridge
